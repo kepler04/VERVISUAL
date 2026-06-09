@@ -114,12 +114,59 @@ export default function AnatomyPage() {
         </div>
       </section>
 
+      {/* ── Próximamente: Modo Test ── */}
+      <section className="mx-auto max-w-6xl px-6 pb-24 sm:px-10">
+        <div className="relative overflow-hidden rounded-3xl border border-surgical-700/20 bg-surgical-700 p-8 text-paper shadow-plate sm:p-12">
+          {/* Patrón decorativo de fondo */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)",
+              backgroundSize: "18px 18px",
+            }}
+          />
+          <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-xl">
+              <span className="inline-flex items-center gap-2 rounded-full bg-amber/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-light">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-light" />
+                Próximamente
+              </span>
+              <h2 className="mt-4 font-display text-3xl font-medium leading-tight text-paper sm:text-4xl">
+                Modo Test — Reconocimiento de imágenes
+              </h2>
+              <p className="mt-4 text-base leading-relaxed text-paper/75">
+                Pon a prueba lo aprendido: el sistema te mostrará una imagen de
+                una estructura y deberás reconocerla. Un repaso visual, rápido y
+                gamificado, construido a partir de las láminas que vayas
+                cargando en cada sistema.
+              </p>
+            </div>
+
+            {/* Icono ilustrativo grande */}
+            <div className="shrink-0">
+              <span className="grid h-28 w-28 place-items-center rounded-3xl bg-paper/10 text-paper backdrop-blur">
+                <svg viewBox="0 0 48 48" fill="none" strokeWidth="1.6" className="h-14 w-14">
+                  <rect x="6" y="8" width="28" height="22" rx="3" stroke="currentColor" />
+                  <circle cx="14" cy="16" r="2.5" stroke="currentColor" />
+                  <path d="M34 26l-7-7-13 11" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="34" cy="34" r="9" stroke="currentColor" />
+                  <path d="M40 40l4 4" stroke="currentColor" strokeLinecap="round" />
+                </svg>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
       <footer className="border-t border-surgical-900/10">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-xs text-ink/45 sm:px-10">
-          <span>VetVisual Learning</span>
+        <div className="mx-auto flex flex-col items-center gap-2 px-6 py-8 text-center text-xs text-ink/45 sm:px-10">
           <span className="plate-rule h-px w-24 text-surgical-900/20" />
-          <span>© 2026</span>
+          <p className="font-display text-sm italic text-surgical-600">
+            Creado para mejoras de estudio de mi cochongita 💛
+          </p>
+          <span className="text-ink/35">VetVisual Learning · © 2026</span>
         </div>
       </footer>
     </main>
