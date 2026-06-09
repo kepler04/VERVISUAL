@@ -114,9 +114,12 @@ export default function AnatomyPage() {
         </div>
       </section>
 
-      {/* ── Próximamente: Modo Test ── */}
+      {/* ── Modo Test ── */}
       <section className="mx-auto max-w-6xl px-6 pb-24 sm:px-10">
-        <div className="relative overflow-hidden rounded-3xl border border-surgical-700/20 bg-surgical-700 p-8 text-paper shadow-plate sm:p-12">
+        <Link
+          href="/anatomy/test"
+          className="group relative block overflow-hidden rounded-3xl border border-surgical-700/20 bg-surgical-700 p-8 text-paper shadow-plate transition-all duration-300 hover:-translate-y-0.5 hover:shadow-plate-hover sm:p-12"
+        >
           {/* Patrón decorativo de fondo */}
           <div
             className="pointer-events-none absolute inset-0 opacity-[0.07]"
@@ -130,17 +133,22 @@ export default function AnatomyPage() {
             <div className="max-w-xl">
               <span className="inline-flex items-center gap-2 rounded-full bg-amber/20 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-light">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-light" />
-                Próximamente
+                Modo Test
               </span>
               <h2 className="mt-4 font-display text-3xl font-medium leading-tight text-paper sm:text-4xl">
-                Modo Test — Reconocimiento de imágenes
+                Reconocimiento de imágenes
               </h2>
               <p className="mt-4 text-base leading-relaxed text-paper/75">
-                Pon a prueba lo aprendido: el sistema te mostrará una imagen de
-                una estructura y deberás reconocerla. Un repaso visual, rápido y
-                gamificado, construido a partir de las láminas que vayas
-                cargando en cada sistema.
+                Pon a prueba lo aprendido: el sistema te muestra una imagen de
+                una estructura y debes reconocerla entre varias opciones. Un
+                repaso visual, rápido y gamificado, a partir de tus láminas.
               </p>
+              <span className="mt-6 inline-flex items-center gap-2 rounded-xl bg-paper px-5 py-3 text-sm font-semibold text-surgical-800 transition-colors group-hover:bg-amber-light">
+                Comenzar test
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1">
+                  <path d="M4 12h15m0 0-6-6m6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
             </div>
 
             {/* Icono ilustrativo grande */}
@@ -156,7 +164,7 @@ export default function AnatomyPage() {
               </span>
             </div>
           </div>
-        </div>
+        </Link>
       </section>
 
       {/* ── Footer ── */}

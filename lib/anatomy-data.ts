@@ -56,6 +56,38 @@ export function getSystem(slug: string): AnatomySystem | undefined {
   return SYSTEMS.find((s) => s.slug === slug);
 }
 
+/** Una hoja del árbol con su path único global y el sistema al que pertenece. */
+export type EstructuraPlana = {
+  path: string; // ej. "sistema-urinario/Riñón/Corteza"
+  name: string; // nombre de la hoja, ej. "Corteza"
+  systemSlug: string;
+  systemName: string;
+};
+
+/** Devuelve todas las hojas (estructuras concretas) aplanadas con su sistema. */
+export function todasLasEstructuras(): EstructuraPlana[] {
+  const out: EstructuraPlana[] = [];
+  for (const system of SYSTEMS) {
+    const recorrer = (nodes: AnatomyNode[], prefix: string) => {
+      for (const node of nodes) {
+        const path = `${prefix}/${node.name}`;
+        if (!node.children || node.children.length === 0) {
+          out.push({
+            path,
+            name: node.name,
+            systemSlug: system.slug,
+            systemName: system.short,
+          });
+        } else {
+          recorrer(node.children, path);
+        }
+      }
+    };
+    recorrer(system.children, system.slug);
+  }
+  return out;
+}
+
 /* ── Datos ───────────────────────────────────────────────────────────── */
 
 export const SYSTEMS: AnatomySystem[] = [
