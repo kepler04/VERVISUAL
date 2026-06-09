@@ -329,12 +329,12 @@ export function EstructuraDetalle({
                         loading="lazy"
                         onClick={() => setLightboxIdx(i)}
                         className={`h-full w-full cursor-zoom-in object-cover transition-transform duration-300 group-hover:scale-105 ${
-                          excluida ? "opacity-50 grayscale" : ""
+                          excluida && editMode ? "opacity-50 grayscale" : ""
                         }`}
                       />
 
-                      {/* Etiqueta "fuera del test" */}
-                      {excluida && (
+                      {/* Etiqueta "fuera del test" — solo en modo edición */}
+                      {excluida && editMode && (
                         <span className="pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-ink/75 px-2 py-0.5 text-[10px] font-medium text-paper backdrop-blur">
                           <IconEyeOff />
                           Fuera del test
