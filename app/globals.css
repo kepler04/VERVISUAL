@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    @apply bg-paper text-ink font-body antialiased;
+    /* Textura sutil de papel: grano + viñeta cálida */
+    background-color: #f4efe6;
+    background-image:
+      radial-gradient(
+        ellipse 80% 50% at 50% -10%,
+        rgba(71, 145, 132, 0.08),
+        transparent 60%
+      ),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  /* Tipografía refinada para los títulos */
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    letter-spacing: -0.015em;
+  }
+}
+
+@layer utilities {
+  /* Línea técnica decorativa estilo lámina anatómica */
+  .plate-rule {
+    background: repeating-linear-gradient(
+      to right,
+      currentColor 0,
+      currentColor 6px,
+      transparent 6px,
+      transparent 12px
+    );
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Numeración tipo catálogo anatómico */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+}
