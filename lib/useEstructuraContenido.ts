@@ -19,6 +19,7 @@ import {
 export type ContenidoEstructura = {
   descripcion: string;
   imagenes: string[]; // URLs públicas
+  puntos_clave: string[]; // puntos para identificar la estructura
 };
 
 /** Convierte un path con espacios/acentos en una ruta segura para Storage. */
@@ -43,6 +44,7 @@ function rutaDesdeUrl(url: string): string | null {
 export function useEstructuraContenido(path: string | null) {
   const [descripcion, setDescripcion] = useState("");
   const [imagenes, setImagenes] = useState<string[]>([]);
+  const [puntosClave, setPuntosClave] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +54,7 @@ export function useEstructuraContenido(path: string | null) {
     if (!path || !supabaseConfigured) {
       setDescripcion("");
       setImagenes([]);
+      setPuntosClave([]);
       return;
     }
     let cancelado = false;
@@ -60,7 +63,7 @@ export function useEstructuraContenido(path: string | null) {
 
     supabase
       .from(CONTENIDO_TABLE)
-      .select("descripcion, imagenes")
+      .select("descripcion, imagenes, puntos_clave")
       .eq("path", path)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -70,6 +73,9 @@ export function useEstructuraContenido(path: string | null) {
         } else {
           setDescripcion(data?.descripcion ?? "");
           setImagenes(Array.isArray(data?.imagenes) ? data!.imagenes : []);
+          setPuntosClave(
+            Array.isArray(data?.puntos_clave) ? data!.puntos_clave : [],
+          );
         }
         setLoading(false);
       });
@@ -110,6 +116,43 @@ export function useEstructuraContenido(path: string | null) {
       }
     },
     [path, upsert],
+  );
+
+  /* ── Puntos clave de identificación ── */
+  const agregarPunto = useCallback(
+    async (texto: string) => {
+      if (!path || !texto.trim()) return;
+      setSaving(true);
+      setError(null);
+      try {
+        const actualizados = [...puntosClave, texto.trim()];
+        await upsert({ puntos_clave: actualizados });
+        setPuntosClave(actualizados);
+      } catch {
+        setError("No se pudo agregar el punto.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [path, puntosClave, upsert],
+  );
+
+  const borrarPunto = useCallback(
+    async (indice: number) => {
+      if (!path) return;
+      setSaving(true);
+      setError(null);
+      try {
+        const actualizados = puntosClave.filter((_, i) => i !== indice);
+        await upsert({ puntos_clave: actualizados });
+        setPuntosClave(actualizados);
+      } catch {
+        setError("No se pudo borrar el punto.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [path, puntosClave, upsert],
   );
 
   /* ── Subir imágenes ── */
@@ -171,11 +214,14 @@ export function useEstructuraContenido(path: string | null) {
   return {
     descripcion,
     imagenes,
+    puntosClave,
     loading,
     saving,
     error,
     configured: supabaseConfigured,
     guardarDescripcion,
+    agregarPunto,
+    borrarPunto,
     subirImagenes,
     borrarImagen,
   };

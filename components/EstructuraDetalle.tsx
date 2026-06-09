@@ -23,6 +23,14 @@ function IconTrash() {
   );
 }
 
+function IconCheck() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" className="h-3.5 w-3.5" aria-hidden="true">
+      <path d="M5 12l4.5 4.5L19 7" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function Spinner() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4 animate-spin" fill="none" aria-hidden="true">
@@ -50,17 +58,22 @@ export function EstructuraDetalle({
   const {
     descripcion,
     imagenes,
+    puntosClave,
     loading,
     saving,
     error,
     configured,
     guardarDescripcion,
+    agregarPunto,
+    borrarPunto,
     subirImagenes,
     borrarImagen,
   } = useEstructuraContenido(path);
 
   const [borrador, setBorrador] = useState("");
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [nuevoPunto, setNuevoPunto] = useState("");
+  // Índice de la imagen abierta en el lightbox (null = cerrado).
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Sincroniza el borrador del textarea cuando cambia la estructura/contenido.
@@ -68,12 +81,34 @@ export function EstructuraDetalle({
     setBorrador(descripcion);
   }, [descripcion, path]);
 
+  // Navegación del lightbox con teclado (flechas y escape).
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxIdx(null);
+      if (e.key === "ArrowRight")
+        setLightboxIdx((i) => (i === null ? i : (i + 1) % imagenes.length));
+      if (e.key === "ArrowLeft")
+        setLightboxIdx((i) =>
+          i === null ? i : (i - 1 + imagenes.length) % imagenes.length,
+        );
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxIdx, imagenes.length]);
+
   const descripcionCambiada = borrador.trim() !== descripcion.trim();
 
   async function onSubir(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (files.length) await subirImagenes(files);
     if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function onAgregarPunto() {
+    if (!nuevoPunto.trim()) return;
+    await agregarPunto(nuevoPunto);
+    setNuevoPunto("");
   }
 
   return (
@@ -160,6 +195,71 @@ export function EstructuraDetalle({
             )}
           </section>
 
+          {/* ── Cómo identificarla (puntos clave) ── */}
+          {(editMode || puntosClave.length > 0) && (
+            <section className="rounded-xl border border-amber/25 bg-amber/[0.06] p-4">
+              <h4 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-amber-dark">
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.7" className="h-4 w-4">
+                  <path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.7.6-1 1-1 2v.5H9v-.5c0-1-.3-1.4-1-2A6 6 0 0 1 12 3Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Cómo identificarla
+              </h4>
+
+              {puntosClave.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {puntosClave.map((punto, i) => (
+                    <li key={`${punto}-${i}`} className="flex items-start gap-2.5 text-sm leading-relaxed text-ink/80">
+                      <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber/20 text-amber-dark">
+                        <IconCheck />
+                      </span>
+                      <span className="flex-1">{punto}</span>
+                      {editMode && (
+                        <button
+                          type="button"
+                          onClick={() => borrarPunto(i)}
+                          title="Borrar punto"
+                          className="mt-0.5 shrink-0 text-ink/30 transition-colors hover:text-red-600"
+                        >
+                          <IconTrash />
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm italic text-ink/40">
+                  Agrega claves para reconocer esta estructura (color, ubicación, forma…).
+                </p>
+              )}
+
+              {editMode && (
+                <div className="mt-3 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={nuevoPunto}
+                    onChange={(e) => setNuevoPunto(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        onAgregarPunto();
+                      }
+                    }}
+                    placeholder="Nueva clave de identificación…"
+                    className="flex-1 rounded-lg border border-amber/30 bg-paper px-3 py-2 text-sm text-ink outline-none transition-colors focus:border-amber"
+                  />
+                  <button
+                    type="button"
+                    disabled={!nuevoPunto.trim() || saving}
+                    onClick={onAgregarPunto}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-dark px-3 py-2 text-sm font-semibold text-paper transition-colors hover:bg-amber disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {saving ? <Spinner /> : "+"} Agregar
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
+
           {/* ── Imágenes ── */}
           <section>
             <div className="mb-3 flex items-center justify-between">
@@ -196,7 +296,7 @@ export function EstructuraDetalle({
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {imagenes.map((url) => (
+                {imagenes.map((url, i) => (
                   <div
                     key={url}
                     className="group relative aspect-square overflow-hidden rounded-xl border border-surgical-900/10 bg-paper-dark/30"
@@ -206,7 +306,7 @@ export function EstructuraDetalle({
                       src={url}
                       alt={name}
                       loading="lazy"
-                      onClick={() => setLightbox(url)}
+                      onClick={() => setLightboxIdx(i)}
                       className="h-full w-full cursor-zoom-in object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                     {editMode && (
@@ -237,25 +337,93 @@ export function EstructuraDetalle({
       </div>
 
       {/* ── Lightbox ── */}
-      {lightbox && (
+      {lightboxIdx !== null && imagenes[lightboxIdx] && (
         <div
-          onClick={() => setLightbox(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 p-6 backdrop-blur-sm animate-fade-up"
+          onClick={() => setLightboxIdx(null)}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 backdrop-blur-sm animate-fade-up sm:p-8"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={lightbox}
-            alt={name}
-            className="max-h-full max-w-full rounded-xl shadow-2xl"
-          />
+          {/* Cerrar */}
           <button
             type="button"
-            onClick={() => setLightbox(null)}
-            className="absolute right-6 top-6 grid h-10 w-10 place-items-center rounded-full bg-paper/90 text-ink hover:bg-paper"
+            onClick={() => setLightboxIdx(null)}
+            className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-paper/90 text-xl text-ink transition-colors hover:bg-paper sm:right-6 sm:top-6"
             aria-label="Cerrar"
           >
             ✕
           </button>
+
+          {/* Imagen + flechas */}
+          <div
+            className="relative flex max-h-[80vh] w-full flex-1 items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {imagenes.length > 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setLightboxIdx(
+                    (lightboxIdx - 1 + imagenes.length) % imagenes.length,
+                  )
+                }
+                className="absolute left-2 z-10 grid h-12 w-12 place-items-center rounded-full bg-paper/90 text-ink transition-colors hover:bg-paper sm:left-4"
+                aria-label="Anterior"
+              >
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" className="h-6 w-6">
+                  <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={imagenes[lightboxIdx]}
+              alt={name}
+              className="max-h-[80vh] max-w-full rounded-xl object-contain shadow-2xl"
+            />
+
+            {imagenes.length > 1 && (
+              <button
+                type="button"
+                onClick={() =>
+                  setLightboxIdx((lightboxIdx + 1) % imagenes.length)
+                }
+                className="absolute right-2 z-10 grid h-12 w-12 place-items-center rounded-full bg-paper/90 text-ink transition-colors hover:bg-paper sm:right-4"
+                aria-label="Siguiente"
+              >
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" className="h-6 w-6">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Pie: nombre + contador + puntos clave */}
+          <div
+            className="w-full max-w-2xl rounded-2xl bg-paper/95 p-5 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-center gap-3">
+              <h4 className="font-display text-lg font-medium text-ink">{name}</h4>
+              {imagenes.length > 1 && (
+                <span className="tabular rounded-full bg-surgical-900/10 px-2.5 py-0.5 text-xs font-medium text-surgical-700">
+                  {lightboxIdx + 1} / {imagenes.length}
+                </span>
+              )}
+            </div>
+            {puntosClave.length > 0 && (
+              <ul className="mt-3 flex flex-wrap justify-center gap-2">
+                {puntosClave.map((punto, i) => (
+                  <li
+                    key={`lb-${i}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-amber/15 px-3 py-1 text-xs text-amber-dark"
+                  >
+                    <IconCheck />
+                    {punto}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </div>
