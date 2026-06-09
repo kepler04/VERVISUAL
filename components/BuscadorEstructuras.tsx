@@ -53,7 +53,7 @@ export function BuscadorEstructuras() {
   }
 
   return (
-    <div ref={boxRef} className="relative">
+    <div ref={boxRef} className="relative z-50">
       <div className="relative">
         <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-ink/40">
           <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" className="h-5 w-5">
@@ -92,7 +92,7 @@ export function BuscadorEstructuras() {
 
       {/* Resultados */}
       {abierto && resultados.length > 0 && (
-        <ul className="absolute z-30 mt-2 w-full overflow-hidden rounded-2xl border border-surgical-900/10 bg-paper shadow-plate-hover">
+        <ul className="absolute z-[60] mt-2 w-full overflow-hidden rounded-2xl border border-surgical-900/10 bg-paper shadow-plate-hover">
           {resultados.map((e, i) => (
             <li key={e.path}>
               <button
@@ -127,7 +127,7 @@ export function BuscadorEstructuras() {
 
       {/* Sin resultados */}
       {abierto && q.trim().length >= 2 && resultados.length === 0 && (
-        <div className="absolute z-30 mt-2 w-full rounded-2xl border border-surgical-900/10 bg-paper px-4 py-3 text-sm text-ink/50 shadow-plate-hover">
+        <div className="absolute z-[60] mt-2 w-full rounded-2xl border border-surgical-900/10 bg-paper px-4 py-3 text-sm text-ink/50 shadow-plate-hover">
           Sin coincidencias para “{q}”.
         </div>
       )}

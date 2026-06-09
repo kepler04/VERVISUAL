@@ -288,8 +288,8 @@ function AnatomyExplorerInner({ system }: { system: AnatomySystem }) {
           </ul>
         </nav>
 
-        {/* Panel de detalle */}
-        <div className="lg:sticky lg:top-6 lg:h-fit lg:min-h-[26rem]">
+        {/* Panel de detalle (z-0 para no tapar el dropdown del buscador) */}
+        <div className="relative z-0 lg:sticky lg:top-6 lg:h-fit lg:min-h-[26rem]">
           {selected ? (
             <EstructuraDetalle
               key={selected.path}
