@@ -20,6 +20,7 @@ export type ContenidoEstructura = {
   descripcion: string;
   imagenes: string[]; // URLs públicas
   puntos_clave: string[]; // puntos para identificar la estructura
+  imagenes_excluidas: string[]; // URLs que NO deben aparecer en el test
 };
 
 /** Convierte un path con espacios/acentos en una ruta segura para Storage. */
@@ -45,6 +46,7 @@ export function useEstructuraContenido(path: string | null) {
   const [descripcion, setDescripcion] = useState("");
   const [imagenes, setImagenes] = useState<string[]>([]);
   const [puntosClave, setPuntosClave] = useState<string[]>([]);
+  const [imagenesExcluidas, setImagenesExcluidas] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export function useEstructuraContenido(path: string | null) {
       setDescripcion("");
       setImagenes([]);
       setPuntosClave([]);
+      setImagenesExcluidas([]);
       return;
     }
     let cancelado = false;
@@ -63,7 +66,7 @@ export function useEstructuraContenido(path: string | null) {
 
     supabase
       .from(CONTENIDO_TABLE)
-      .select("descripcion, imagenes, puntos_clave")
+      .select("descripcion, imagenes, puntos_clave, imagenes_excluidas")
       .eq("path", path)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -75,6 +78,11 @@ export function useEstructuraContenido(path: string | null) {
           setImagenes(Array.isArray(data?.imagenes) ? data!.imagenes : []);
           setPuntosClave(
             Array.isArray(data?.puntos_clave) ? data!.puntos_clave : [],
+          );
+          setImagenesExcluidas(
+            Array.isArray(data?.imagenes_excluidas)
+              ? data!.imagenes_excluidas
+              : [],
           );
         }
         setLoading(false);
@@ -188,6 +196,28 @@ export function useEstructuraContenido(path: string | null) {
     [path, imagenes, upsert],
   );
 
+  /* ── Excluir / incluir imagen en el test ── */
+  const toggleExcluirImagen = useCallback(
+    async (url: string) => {
+      if (!path) return;
+      setSaving(true);
+      setError(null);
+      try {
+        const estaba = imagenesExcluidas.includes(url);
+        const actualizadas = estaba
+          ? imagenesExcluidas.filter((u) => u !== url)
+          : [...imagenesExcluidas, url];
+        await upsert({ imagenes_excluidas: actualizadas });
+        setImagenesExcluidas(actualizadas);
+      } catch {
+        setError("No se pudo actualizar la imagen.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [path, imagenesExcluidas, upsert],
+  );
+
   /* ── Borrar imagen ── */
   const borrarImagen = useCallback(
     async (url: string) => {
@@ -200,21 +230,28 @@ export function useEstructuraContenido(path: string | null) {
           await supabase.storage.from(BUCKET).remove([ruta]);
         }
         const actualizadas = imagenes.filter((u) => u !== url);
-        await upsert({ imagenes: actualizadas });
+        // Quitar también de excluidas si estaba ahí.
+        const excluidasLimpias = imagenesExcluidas.filter((u) => u !== url);
+        await upsert({
+          imagenes: actualizadas,
+          imagenes_excluidas: excluidasLimpias,
+        });
         setImagenes(actualizadas);
+        setImagenesExcluidas(excluidasLimpias);
       } catch {
         setError("No se pudo borrar la imagen.");
       } finally {
         setSaving(false);
       }
     },
-    [path, imagenes, upsert],
+    [path, imagenes, imagenesExcluidas, upsert],
   );
 
   return {
     descripcion,
     imagenes,
     puntosClave,
+    imagenesExcluidas,
     loading,
     saving,
     error,
@@ -224,5 +261,6 @@ export function useEstructuraContenido(path: string | null) {
     borrarPunto,
     subirImagenes,
     borrarImagen,
+    toggleExcluirImagen,
   };
 }

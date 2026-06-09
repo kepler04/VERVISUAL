@@ -23,6 +23,23 @@ function IconTrash() {
   );
 }
 
+function IconEyeOff() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true">
+      <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.4 5.2A9 9 0 0 1 12 5c5 0 9 5 9 7a12 12 0 0 1-2.3 3M6.1 6.1A12.8 12.8 0 0 0 3 12c0 2 4 7 9 7a9 9 0 0 0 3.9-.9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconEye() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true">
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z" stroke="currentColor" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" />
+    </svg>
+  );
+}
+
 function IconCheck() {
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" className="h-3.5 w-3.5" aria-hidden="true">
@@ -59,6 +76,7 @@ export function EstructuraDetalle({
     descripcion,
     imagenes,
     puntosClave,
+    imagenesExcluidas,
     loading,
     saving,
     error,
@@ -68,6 +86,7 @@ export function EstructuraDetalle({
     borrarPunto,
     subirImagenes,
     borrarImagen,
+    toggleExcluirImagen,
   } = useEstructuraContenido(path);
 
   const [borrador, setBorrador] = useState("");
@@ -296,33 +315,63 @@ export function EstructuraDetalle({
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {imagenes.map((url, i) => (
-                  <div
-                    key={url}
-                    className="group relative aspect-square overflow-hidden rounded-xl border border-surgical-900/10 bg-paper-dark/30"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={url}
-                      alt={name}
-                      loading="lazy"
-                      onClick={() => setLightboxIdx(i)}
-                      className="h-full w-full cursor-zoom-in object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    {editMode && (
-                      <button
-                        type="button"
-                        title="Borrar imagen"
-                        onClick={() => {
-                          if (confirm("¿Borrar esta imagen?")) borrarImagen(url);
-                        }}
-                        className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-ink/70 text-paper opacity-0 backdrop-blur transition-opacity hover:bg-red-600 group-hover:opacity-100"
-                      >
-                        <IconTrash />
-                      </button>
-                    )}
-                  </div>
-                ))}
+                {imagenes.map((url, i) => {
+                  const excluida = imagenesExcluidas.includes(url);
+                  return (
+                    <div
+                      key={url}
+                      className="group relative aspect-square overflow-hidden rounded-xl border border-surgical-900/10 bg-paper-dark/30"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={url}
+                        alt={name}
+                        loading="lazy"
+                        onClick={() => setLightboxIdx(i)}
+                        className={`h-full w-full cursor-zoom-in object-cover transition-transform duration-300 group-hover:scale-105 ${
+                          excluida ? "opacity-50 grayscale" : ""
+                        }`}
+                      />
+
+                      {/* Etiqueta "fuera del test" */}
+                      {excluida && (
+                        <span className="pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-ink/75 px-2 py-0.5 text-[10px] font-medium text-paper backdrop-blur">
+                          <IconEyeOff />
+                          Fuera del test
+                        </span>
+                      )}
+
+                      {editMode && (
+                        <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                          {/* Excluir / incluir en test */}
+                          <button
+                            type="button"
+                            title={excluida ? "Incluir en el test" : "Ocultar del test"}
+                            onClick={() => toggleExcluirImagen(url)}
+                            className={`grid h-8 w-8 place-items-center rounded-lg backdrop-blur transition-colors ${
+                              excluida
+                                ? "bg-amber-dark/90 text-paper hover:bg-amber-dark"
+                                : "bg-ink/70 text-paper hover:bg-surgical-700"
+                            }`}
+                          >
+                            {excluida ? <IconEye /> : <IconEyeOff />}
+                          </button>
+                          {/* Borrar */}
+                          <button
+                            type="button"
+                            title="Borrar imagen"
+                            onClick={() => {
+                              if (confirm("¿Borrar esta imagen?")) borrarImagen(url);
+                            }}
+                            className="grid h-8 w-8 place-items-center rounded-lg bg-ink/70 text-paper backdrop-blur transition-colors hover:bg-red-600"
+                          >
+                            <IconTrash />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>

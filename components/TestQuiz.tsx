@@ -98,7 +98,7 @@ export function TestQuiz({
 
     supabase
       .from(CONTENIDO_TABLE)
-      .select("path, imagenes")
+      .select("path, imagenes, imagenes_excluidas")
       .then(({ data, error }) => {
         if (cancelado) return;
         if (error) {
@@ -115,11 +115,15 @@ export function TestQuiz({
         for (const fila of data ?? []) {
           const imgs: string[] = Array.isArray(fila.imagenes) ? fila.imagenes : [];
           if (imgs.length === 0) continue;
+          const excluidas: string[] = Array.isArray(fila.imagenes_excluidas)
+            ? fila.imagenes_excluidas
+            : [];
           const meta = porPath.get(fila.path);
           if (!meta) continue;
           if (systemSlug && meta.systemSlug !== systemSlug) continue;
-          // Una entrada por imagen (cada imagen es una pregunta potencial).
+          // Una entrada por imagen NO excluida (cada una es una pregunta).
           for (const img of imgs) {
+            if (excluidas.includes(img)) continue;
             conImagen.push({ ...meta, imagen: img });
           }
         }
