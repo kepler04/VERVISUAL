@@ -20,8 +20,12 @@ export type ContenidoEstructura = {
   descripcion: string;
   imagenes: string[]; // URLs públicas
   puntos_clave: string[]; // puntos para identificar la estructura
-  imagenes_excluidas: string[]; // URLs que NO deben aparecer en el test
+  imagenes_excluidas: string[]; // "solo estudio": se ven al estudiar, NO en test
+  imagenes_solo_test: string[]; // "solo test": NO se ven al estudiar, SÍ en test
 };
+
+/** Estado de visibilidad de una imagen. */
+export type VisibilidadImagen = "normal" | "solo_estudio" | "solo_test";
 
 /** Convierte un path con espacios/acentos en una ruta segura para Storage. */
 function sanitizarPath(path: string): string {
@@ -47,6 +51,7 @@ export function useEstructuraContenido(path: string | null) {
   const [imagenes, setImagenes] = useState<string[]>([]);
   const [puntosClave, setPuntosClave] = useState<string[]>([]);
   const [imagenesExcluidas, setImagenesExcluidas] = useState<string[]>([]);
+  const [imagenesSoloTest, setImagenesSoloTest] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +63,7 @@ export function useEstructuraContenido(path: string | null) {
       setImagenes([]);
       setPuntosClave([]);
       setImagenesExcluidas([]);
+      setImagenesSoloTest([]);
       return;
     }
     let cancelado = false;
@@ -66,7 +72,9 @@ export function useEstructuraContenido(path: string | null) {
 
     supabase
       .from(CONTENIDO_TABLE)
-      .select("descripcion, imagenes, puntos_clave, imagenes_excluidas")
+      .select(
+        "descripcion, imagenes, puntos_clave, imagenes_excluidas, imagenes_solo_test",
+      )
       .eq("path", path)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -82,6 +90,11 @@ export function useEstructuraContenido(path: string | null) {
           setImagenesExcluidas(
             Array.isArray(data?.imagenes_excluidas)
               ? data!.imagenes_excluidas
+              : [],
+          );
+          setImagenesSoloTest(
+            Array.isArray(data?.imagenes_solo_test)
+              ? data!.imagenes_solo_test
               : [],
           );
         }
@@ -196,26 +209,35 @@ export function useEstructuraContenido(path: string | null) {
     [path, imagenes, upsert],
   );
 
-  /* ── Excluir / incluir imagen en el test ── */
-  const toggleExcluirImagen = useCallback(
-    async (url: string) => {
+  /* ── Cambiar visibilidad de una imagen (normal / solo estudio / solo test) ── */
+  const setVisibilidadImagen = useCallback(
+    async (url: string, estado: VisibilidadImagen) => {
       if (!path) return;
       setSaving(true);
       setError(null);
       try {
-        const estaba = imagenesExcluidas.includes(url);
-        const actualizadas = estaba
-          ? imagenesExcluidas.filter((u) => u !== url)
-          : [...imagenesExcluidas, url];
-        await upsert({ imagenes_excluidas: actualizadas });
-        setImagenesExcluidas(actualizadas);
+        // Una imagen solo puede estar en una lista a la vez.
+        const sinUrl = (arr: string[]) => arr.filter((u) => u !== url);
+        let excluidas = sinUrl(imagenesExcluidas);
+        let soloTest = sinUrl(imagenesSoloTest);
+
+        if (estado === "solo_estudio") excluidas = [...excluidas, url];
+        else if (estado === "solo_test") soloTest = [...soloTest, url];
+        // "normal" → no se añade a ninguna.
+
+        await upsert({
+          imagenes_excluidas: excluidas,
+          imagenes_solo_test: soloTest,
+        });
+        setImagenesExcluidas(excluidas);
+        setImagenesSoloTest(soloTest);
       } catch {
         setError("No se pudo actualizar la imagen.");
       } finally {
         setSaving(false);
       }
     },
-    [path, imagenesExcluidas, upsert],
+    [path, imagenesExcluidas, imagenesSoloTest, upsert],
   );
 
   /* ── Borrar imagen ── */
@@ -230,21 +252,24 @@ export function useEstructuraContenido(path: string | null) {
           await supabase.storage.from(BUCKET).remove([ruta]);
         }
         const actualizadas = imagenes.filter((u) => u !== url);
-        // Quitar también de excluidas si estaba ahí.
+        // Quitar también de las listas de visibilidad si estaba ahí.
         const excluidasLimpias = imagenesExcluidas.filter((u) => u !== url);
+        const soloTestLimpias = imagenesSoloTest.filter((u) => u !== url);
         await upsert({
           imagenes: actualizadas,
           imagenes_excluidas: excluidasLimpias,
+          imagenes_solo_test: soloTestLimpias,
         });
         setImagenes(actualizadas);
         setImagenesExcluidas(excluidasLimpias);
+        setImagenesSoloTest(soloTestLimpias);
       } catch {
         setError("No se pudo borrar la imagen.");
       } finally {
         setSaving(false);
       }
     },
-    [path, imagenes, imagenesExcluidas, upsert],
+    [path, imagenes, imagenesExcluidas, imagenesSoloTest, upsert],
   );
 
   return {
@@ -252,6 +277,7 @@ export function useEstructuraContenido(path: string | null) {
     imagenes,
     puntosClave,
     imagenesExcluidas,
+    imagenesSoloTest,
     loading,
     saving,
     error,
@@ -261,6 +287,6 @@ export function useEstructuraContenido(path: string | null) {
     borrarPunto,
     subirImagenes,
     borrarImagen,
-    toggleExcluirImagen,
+    setVisibilidadImagen,
   };
 }

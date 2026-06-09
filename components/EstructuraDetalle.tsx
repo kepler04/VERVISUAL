@@ -31,15 +31,6 @@ function IconEyeOff() {
   );
 }
 
-function IconEye() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" className="h-4 w-4" aria-hidden="true">
-      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z" stroke="currentColor" strokeLinejoin="round" />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" />
-    </svg>
-  );
-}
-
 function IconCheck() {
   return (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.2" className="h-3.5 w-3.5" aria-hidden="true">
@@ -77,6 +68,7 @@ export function EstructuraDetalle({
     imagenes,
     puntosClave,
     imagenesExcluidas,
+    imagenesSoloTest,
     loading,
     saving,
     error,
@@ -86,7 +78,7 @@ export function EstructuraDetalle({
     borrarPunto,
     subirImagenes,
     borrarImagen,
-    toggleExcluirImagen,
+    setVisibilidadImagen,
   } = useEstructuraContenido(path);
 
   const [borrador, setBorrador] = useState("");
@@ -94,6 +86,19 @@ export function EstructuraDetalle({
   // Índice de la imagen abierta en el lightbox (null = cerrado).
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // En modo edición se ven todas; en lectura se ocultan las "solo test".
+  const imagenesVisibles = editMode
+    ? imagenes
+    : imagenes.filter((u) => !imagenesSoloTest.includes(u));
+
+  // Estado de visibilidad de una imagen.
+  const estadoDe = (url: string): "normal" | "solo_estudio" | "solo_test" =>
+    imagenesExcluidas.includes(url)
+      ? "solo_estudio"
+      : imagenesSoloTest.includes(url)
+        ? "solo_test"
+        : "normal";
 
   // Sincroniza el borrador del textarea cuando cambia la estructura/contenido.
   useEffect(() => {
@@ -103,18 +108,17 @@ export function EstructuraDetalle({
   // Navegación del lightbox con teclado (flechas y escape).
   useEffect(() => {
     if (lightboxIdx === null) return;
+    const total = imagenesVisibles.length;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") setLightboxIdx(null);
       if (e.key === "ArrowRight")
-        setLightboxIdx((i) => (i === null ? i : (i + 1) % imagenes.length));
+        setLightboxIdx((i) => (i === null ? i : (i + 1) % total));
       if (e.key === "ArrowLeft")
-        setLightboxIdx((i) =>
-          i === null ? i : (i - 1 + imagenes.length) % imagenes.length,
-        );
+        setLightboxIdx((i) => (i === null ? i : (i - 1 + total) % total));
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxIdx, imagenes.length]);
+  }, [lightboxIdx, imagenesVisibles.length]);
 
   const descripcionCambiada = borrador.trim() !== descripcion.trim();
 
@@ -284,7 +288,7 @@ export function EstructuraDetalle({
             <div className="mb-3 flex items-center justify-between">
               <h4 className="text-xs font-semibold uppercase tracking-widest text-surgical-700">
                 Imágenes{" "}
-                <span className="tabular text-ink/40">({imagenes.length})</span>
+                <span className="tabular text-ink/40">({imagenesVisibles.length})</span>
               </h4>
               {editMode && (
                 <>
@@ -309,14 +313,15 @@ export function EstructuraDetalle({
               )}
             </div>
 
-            {imagenes.length === 0 ? (
+            {imagenesVisibles.length === 0 ? (
               <p className="text-sm italic text-ink/40">
                 {editMode ? "Aún no hay imágenes. Agrega una." : "Sin imágenes aún."}
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {imagenes.map((url, i) => {
-                  const excluida = imagenesExcluidas.includes(url);
+                {imagenesVisibles.map((url, i) => {
+                  const estado = estadoDe(url);
+                  const atenuada = editMode && estado !== "normal";
                   return (
                     <div
                       key={url}
@@ -329,45 +334,76 @@ export function EstructuraDetalle({
                         loading="lazy"
                         onClick={() => setLightboxIdx(i)}
                         className={`h-full w-full cursor-zoom-in object-cover transition-transform duration-300 group-hover:scale-105 ${
-                          excluida && editMode ? "opacity-50 grayscale" : ""
+                          atenuada ? "opacity-60" : ""
                         }`}
                       />
 
-                      {/* Etiqueta "fuera del test" — solo en modo edición */}
-                      {excluida && editMode && (
-                        <span className="pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md bg-ink/75 px-2 py-0.5 text-[10px] font-medium text-paper backdrop-blur">
+                      {/* Etiqueta de estado — solo en modo edición */}
+                      {editMode && estado !== "normal" && (
+                        <span
+                          className={`pointer-events-none absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium text-paper backdrop-blur ${
+                            estado === "solo_estudio" ? "bg-ink/75" : "bg-amber-dark/90"
+                          }`}
+                        >
                           <IconEyeOff />
-                          Fuera del test
+                          {estado === "solo_estudio" ? "Fuera del test" : "Solo test"}
                         </span>
                       )}
 
                       {editMode && (
-                        <div className="absolute right-2 top-2 flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
-                          {/* Excluir / incluir en test */}
-                          <button
-                            type="button"
-                            title={excluida ? "Incluir en el test" : "Ocultar del test"}
-                            onClick={() => toggleExcluirImagen(url)}
-                            className={`grid h-8 w-8 place-items-center rounded-lg backdrop-blur transition-colors ${
-                              excluida
-                                ? "bg-amber-dark/90 text-paper hover:bg-amber-dark"
-                                : "bg-ink/70 text-paper hover:bg-surgical-700"
-                            }`}
-                          >
-                            {excluida ? <IconEye /> : <IconEyeOff />}
-                          </button>
-                          {/* Borrar */}
+                        <>
+                          {/* Borrar (arriba der.) */}
                           <button
                             type="button"
                             title="Borrar imagen"
                             onClick={() => {
                               if (confirm("¿Borrar esta imagen?")) borrarImagen(url);
                             }}
-                            className="grid h-8 w-8 place-items-center rounded-lg bg-ink/70 text-paper backdrop-blur transition-colors hover:bg-red-600"
+                            className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg bg-ink/70 text-paper opacity-0 backdrop-blur transition-all hover:bg-red-600 group-hover:opacity-100"
                           >
                             <IconTrash />
                           </button>
-                        </div>
+
+                          {/* Selector de visibilidad (arriba, 3 estados) */}
+                          <div className="absolute inset-x-2 top-2 flex justify-start gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
+                              type="button"
+                              title="Normal: en estudio y en test"
+                              onClick={() => setVisibilidadImagen(url, "normal")}
+                              className={`rounded-md px-2 py-1 text-[10px] font-semibold backdrop-blur transition-colors ${
+                                estado === "normal"
+                                  ? "bg-surgical-700 text-paper"
+                                  : "bg-paper/85 text-ink/70 hover:bg-paper"
+                              }`}
+                            >
+                              Ambos
+                            </button>
+                            <button
+                              type="button"
+                              title="Solo estudio: se ve, pero no en el test"
+                              onClick={() => setVisibilidadImagen(url, "solo_estudio")}
+                              className={`rounded-md px-2 py-1 text-[10px] font-semibold backdrop-blur transition-colors ${
+                                estado === "solo_estudio"
+                                  ? "bg-surgical-700 text-paper"
+                                  : "bg-paper/85 text-ink/70 hover:bg-paper"
+                              }`}
+                            >
+                              Estudio
+                            </button>
+                            <button
+                              type="button"
+                              title="Solo test: oculta en estudio, solo aparece en el test"
+                              onClick={() => setVisibilidadImagen(url, "solo_test")}
+                              className={`rounded-md px-2 py-1 text-[10px] font-semibold backdrop-blur transition-colors ${
+                                estado === "solo_test"
+                                  ? "bg-amber-dark text-paper"
+                                  : "bg-paper/85 text-ink/70 hover:bg-paper"
+                              }`}
+                            >
+                              Test
+                            </button>
+                          </div>
+                        </>
                       )}
                     </div>
                   );
@@ -386,7 +422,7 @@ export function EstructuraDetalle({
       </div>
 
       {/* ── Lightbox ── */}
-      {lightboxIdx !== null && imagenes[lightboxIdx] && (
+      {lightboxIdx !== null && imagenesVisibles[lightboxIdx] && (
         <div
           onClick={() => setLightboxIdx(null)}
           className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/90 p-4 backdrop-blur-sm animate-fade-up sm:p-8"
@@ -406,12 +442,13 @@ export function EstructuraDetalle({
             className="relative flex max-h-[80vh] w-full flex-1 items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            {imagenes.length > 1 && (
+            {imagenesVisibles.length > 1 && (
               <button
                 type="button"
                 onClick={() =>
                   setLightboxIdx(
-                    (lightboxIdx - 1 + imagenes.length) % imagenes.length,
+                    (lightboxIdx - 1 + imagenesVisibles.length) %
+                      imagenesVisibles.length,
                   )
                 }
                 className="absolute left-2 z-10 grid h-12 w-12 place-items-center rounded-full bg-paper/90 text-ink transition-colors hover:bg-paper sm:left-4"
@@ -425,16 +462,16 @@ export function EstructuraDetalle({
 
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={imagenes[lightboxIdx]}
+              src={imagenesVisibles[lightboxIdx]}
               alt={name}
               className="max-h-[80vh] max-w-full rounded-xl object-contain shadow-2xl"
             />
 
-            {imagenes.length > 1 && (
+            {imagenesVisibles.length > 1 && (
               <button
                 type="button"
                 onClick={() =>
-                  setLightboxIdx((lightboxIdx + 1) % imagenes.length)
+                  setLightboxIdx((lightboxIdx + 1) % imagenesVisibles.length)
                 }
                 className="absolute right-2 z-10 grid h-12 w-12 place-items-center rounded-full bg-paper/90 text-ink transition-colors hover:bg-paper sm:right-4"
                 aria-label="Siguiente"
@@ -453,9 +490,9 @@ export function EstructuraDetalle({
           >
             <div className="flex items-center justify-center gap-3">
               <h4 className="font-display text-lg font-medium text-ink">{name}</h4>
-              {imagenes.length > 1 && (
+              {imagenesVisibles.length > 1 && (
                 <span className="tabular rounded-full bg-surgical-900/10 px-2.5 py-0.5 text-xs font-medium text-surgical-700">
-                  {lightboxIdx + 1} / {imagenes.length}
+                  {lightboxIdx + 1} / {imagenesVisibles.length}
                 </span>
               )}
             </div>
