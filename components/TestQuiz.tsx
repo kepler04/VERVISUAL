@@ -28,22 +28,31 @@ function barajar<T>(arr: T[]): T[] {
 
 /**
  * Construye las preguntas: una por cada imagen disponible. Los distractores se
- * eligen del MISMO sistema; si no hay suficientes, se completan con otros.
+ * eligen entre ESTRUCTURAS ÚNICAS (por path) del mismo sistema; si no hay
+ * suficientes, se completan con otras. Siempre 4 opciones sin duplicados.
  */
 function construirPreguntas(items: ItemConImagen[]): Pregunta[] {
   const preguntas: Pregunta[] = [];
 
+  // Catálogo de estructuras únicas por path (una sola entrada aunque tenga
+  // varias imágenes), para usarlo como pozo de distractores sin repetidos.
+  const unicasPorPath = new Map<string, ItemConImagen>();
+  for (const it of items) {
+    if (!unicasPorPath.has(it.path)) unicasPorPath.set(it.path, it);
+  }
+  const unicas = [...unicasPorPath.values()];
+
   for (const item of items) {
-    // Candidatos a distractores: mismo sistema, distinta estructura.
-    const mismoSistema = items.filter(
+    // Distractores: estructuras únicas, mismo sistema, distinto path.
+    const mismoSistema = unicas.filter(
       (x) => x.systemSlug === item.systemSlug && x.path !== item.path,
     );
     let distractores = barajar(mismoSistema).slice(0, 3);
 
-    // Completar con otros sistemas si faltan.
+    // Completar con estructuras de otros sistemas si faltan.
     if (distractores.length < 3) {
       const otros = barajar(
-        items.filter(
+        unicas.filter(
           (x) =>
             x.path !== item.path && !distractores.some((d) => d.path === x.path),
         ),
@@ -51,7 +60,6 @@ function construirPreguntas(items: ItemConImagen[]): Pregunta[] {
       distractores = [...distractores, ...otros].slice(0, 3);
     }
 
-    // Si ni así hay distractores (banco muy pequeño), igual mostramos la pregunta.
     const opciones = barajar([item, ...distractores]);
     preguntas.push({ imagen: item.imagen, correcta: item, opciones });
   }
