@@ -90,6 +90,55 @@ export default async function SystemPage({
             </p>
           </div>
         </div>
+
+        {/* Navegación entre sistemas (compacta, bajo el título) */}
+        <nav
+          aria-label="Navegación entre sistemas"
+          className="mt-7 flex items-center justify-between gap-3 border-t border-surgical-900/10 pt-5 animate-fade-up"
+          style={{ animationDelay: "80ms" }}
+        >
+          {prev ? (
+            <Link
+              href={`/anatomy/${prev.slug}`}
+              className="group flex min-w-0 items-center gap-2.5 rounded-full border border-surgical-900/15 bg-paper py-2 pl-2.5 pr-4 text-sm transition-colors hover:border-surgical-700/30 hover:bg-surgical-50"
+            >
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surgical-50 text-surgical-600 transition-colors group-hover:bg-surgical-700 group-hover:text-paper">
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" className="h-4 w-4">
+                  <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              <span className="min-w-0 text-left">
+                <span className="block text-[10px] font-medium uppercase tracking-widest text-ink/40">
+                  Anterior
+                </span>
+                <span className="block truncate font-medium text-ink">{prev.short}</span>
+              </span>
+            </Link>
+          ) : (
+            <span />
+          )}
+
+          {next ? (
+            <Link
+              href={`/anatomy/${next.slug}`}
+              className="group flex min-w-0 items-center gap-2.5 rounded-full border border-surgical-900/15 bg-paper py-2 pl-4 pr-2.5 text-sm transition-colors hover:border-surgical-700/30 hover:bg-surgical-50"
+            >
+              <span className="min-w-0 text-right">
+                <span className="block text-[10px] font-medium uppercase tracking-widest text-ink/40">
+                  Siguiente
+                </span>
+                <span className="block truncate font-medium text-ink">{next.short}</span>
+              </span>
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-surgical-50 text-surgical-600 transition-colors group-hover:bg-surgical-700 group-hover:text-paper">
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" className="h-4 w-4">
+                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
       </section>
 
       {/* ── Explorador ── */}
@@ -99,62 +148,6 @@ export default async function SystemPage({
       >
         <AnatomyExplorer system={data} />
       </section>
-
-      {/* ── Navegación entre sistemas ── */}
-      <nav
-        aria-label="Navegación entre sistemas"
-        className="mx-auto max-w-6xl px-6 pb-24 sm:px-10"
-      >
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {/* Anterior */}
-          {prev ? (
-            <Link
-              href={`/anatomy/${prev.slug}`}
-              className="group flex items-center gap-4 rounded-2xl border border-surgical-900/10 bg-paper p-5 shadow-plate transition-all duration-300 hover:-translate-y-0.5 hover:border-surgical-700/30 hover:shadow-plate-hover"
-            >
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surgical-50 text-surgical-600 transition-colors group-hover:bg-surgical-700 group-hover:text-paper">
-                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" className="h-5 w-5">
-                  <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <span className="min-w-0">
-                <span className="block text-xs font-medium uppercase tracking-widest text-ink/40">
-                  Sistema anterior
-                </span>
-                <span className="block truncate font-display text-lg font-medium text-ink">
-                  {prev.name}
-                </span>
-              </span>
-            </Link>
-          ) : (
-            <span aria-hidden className="hidden sm:block" />
-          )}
-
-          {/* Siguiente */}
-          {next ? (
-            <Link
-              href={`/anatomy/${next.slug}`}
-              className="group flex items-center justify-end gap-4 rounded-2xl border border-surgical-900/10 bg-paper p-5 text-right shadow-plate transition-all duration-300 hover:-translate-y-0.5 hover:border-surgical-700/30 hover:shadow-plate-hover"
-            >
-              <span className="min-w-0">
-                <span className="block text-xs font-medium uppercase tracking-widest text-ink/40">
-                  Sistema siguiente
-                </span>
-                <span className="block truncate font-display text-lg font-medium text-ink">
-                  {next.name}
-                </span>
-              </span>
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-surgical-50 text-surgical-600 transition-colors group-hover:bg-surgical-700 group-hover:text-paper">
-                <svg viewBox="0 0 24 24" fill="none" strokeWidth="2" className="h-5 w-5">
-                  <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </Link>
-          ) : (
-            <span aria-hidden className="hidden sm:block" />
-          )}
-        </div>
-      </nav>
 
       {/* ── Footer ── */}
       <footer className="border-t border-surgical-900/10">
