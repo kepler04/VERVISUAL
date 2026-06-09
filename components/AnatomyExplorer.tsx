@@ -1,7 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import type { AnatomyNode, AnatomySystem } from "@/lib/anatomy-data";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  todasLasEstructuras,
+  type AnatomyNode,
+  type AnatomySystem,
+} from "@/lib/anatomy-data";
 import { useEditMode } from "@/lib/useEditMode";
 import { EstructuraDetalle } from "@/components/EstructuraDetalle";
 
@@ -39,8 +44,15 @@ function TreeNode({
   onSelect: (path: string, name: string) => void;
 }) {
   const isBranch = !!node.children && node.children.length > 0;
-  const [open, setOpen] = useState(depth === 0);
+  // Abre por defecto el nivel 0, o si la estructura seleccionada está dentro.
+  const contieneSeleccion = selected != null && selected.startsWith(`${path}/`);
+  const [open, setOpen] = useState(depth === 0 || contieneSeleccion);
   const isSelected = selected === path;
+
+  // Si llega una selección dentro de esta rama (ej. desde el buscador), ábrela.
+  useEffect(() => {
+    if (contieneSeleccion) setOpen(true);
+  }, [contieneSeleccion]);
 
   if (isBranch) {
     return (
@@ -222,11 +234,22 @@ function BarraEdicion({
 
 /* ── Explorador ──────────────────────────────────────────────────────── */
 
-export function AnatomyExplorer({ system }: { system: AnatomySystem }) {
+function AnatomyExplorerInner({ system }: { system: AnatomySystem }) {
   const [selected, setSelected] = useState<{ path: string; name: string } | null>(
     null,
   );
   const { editMode, desbloquear, bloquear } = useEditMode();
+  const searchParams = useSearchParams();
+
+  // Preselección vía ?sel= (desde el buscador). Solo si la ruta pertenece a
+  // este sistema y corresponde a una hoja real.
+  const selParam = searchParams.get("sel");
+  useEffect(() => {
+    if (!selParam) return;
+    if (!selParam.startsWith(`${system.slug}/`)) return;
+    const hoja = todasLasEstructuras().find((e) => e.path === selParam);
+    if (hoja) setSelected({ path: hoja.path, name: hoja.name });
+  }, [selParam, system.slug]);
 
   // Migas: el path empieza con el slug del sistema (para unicidad global);
   // lo recortamos al mostrar y dejamos solo los grupos intermedios.
@@ -282,5 +305,14 @@ export function AnatomyExplorer({ system }: { system: AnatomySystem }) {
         </div>
       </div>
     </div>
+  );
+}
+
+/* useSearchParams requiere un límite de Suspense para el prerender SSG. */
+export function AnatomyExplorer({ system }: { system: AnatomySystem }) {
+  return (
+    <Suspense fallback={null}>
+      <AnatomyExplorerInner system={system} />
+    </Suspense>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SYSTEMS, countLeaves } from "@/lib/anatomy-data";
 import { SystemIcon } from "@/components/SystemIcon";
+import { BuscadorEstructuras } from "@/components/BuscadorEstructuras";
 
 export default function AnatomyPage() {
   return (
@@ -49,6 +50,14 @@ export default function AnatomyPage() {
           Explora la anatomía animal por regiones y sistemas. Cada bloque abre un
           índice detallado de sus estructuras.
         </p>
+
+        {/* Buscador global de estructuras */}
+        <div
+          className="mt-8 max-w-2xl animate-fade-up"
+          style={{ animationDelay: "160ms" }}
+        >
+          <BuscadorEstructuras />
+        </div>
       </section>
 
       {/* ── Grid de sistemas ── */}

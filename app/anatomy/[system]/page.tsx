@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { SYSTEMS, getSystem, countLeaves } from "@/lib/anatomy-data";
 import { SystemIcon } from "@/components/SystemIcon";
 import { AnatomyExplorer } from "@/components/AnatomyExplorer";
+import { BuscadorEstructuras } from "@/components/BuscadorEstructuras";
 
 export function generateStaticParams() {
   return SYSTEMS.map((s) => ({ system: s.slug }));
@@ -145,6 +146,14 @@ export default async function SystemPage({
             <span aria-hidden className="hidden sm:block" />
           )}
         </nav>
+      </section>
+
+      {/* ── Buscador global ── */}
+      <section
+        className="mx-auto max-w-6xl px-6 pb-6 sm:px-10 animate-fade-up"
+        style={{ animationDelay: "100ms" }}
+      >
+        <BuscadorEstructuras />
       </section>
 
       {/* ── Explorador ── */}
