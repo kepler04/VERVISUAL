@@ -148,17 +148,17 @@ export default async function SystemPage({
         </nav>
       </section>
 
-      {/* ── Buscador global ── */}
+      {/* ── Buscador global (relative z-50 para que su dropdown tape al explorador) ── */}
       <section
-        className="mx-auto max-w-6xl px-6 pb-6 sm:px-10 animate-fade-up"
+        className="relative z-50 mx-auto max-w-6xl px-6 pb-6 sm:px-10 animate-fade-up"
         style={{ animationDelay: "100ms" }}
       >
         <BuscadorEstructuras />
       </section>
 
-      {/* ── Explorador ── */}
+      {/* ── Explorador (z-0 para quedar bajo el dropdown del buscador) ── */}
       <section
-        className="mx-auto max-w-6xl px-6 pb-24 sm:px-10 animate-fade-up"
+        className="relative z-0 mx-auto max-w-6xl px-6 pb-24 sm:px-10 animate-fade-up"
         style={{ animationDelay: "120ms" }}
       >
         <AnatomyExplorer system={data} />
